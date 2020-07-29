@@ -19,6 +19,7 @@ class XalanCConan(ConanFile):
     }
     default_options={"shared": True, "fPIC": False, "xerces-c:shared": True}
     generators = "cmake", "cmake_find_package"
+    url = "https://github.com/djimenezgallegos/xalanc_recipe"
     _cmake = None
     _temp_folder = None
     _source_folder = None
