@@ -1,5 +1,6 @@
 from os.path import expanduser
 from conans import ConanFile, CMake, tools
+from conans.model.version import Version
 import os
 
 
@@ -12,11 +13,8 @@ class XalanCConan(ConanFile):
                     The Xalan-C++ project creates and distributes a standard XSLT library and a simple Xalan command-line utility for transforming XML documents.""" 
     topics = ("xml", "XSLT", "xalan", "xalan-c", "xalan-c++")
     settings = "os", "compiler", "build_type", "arch"
-    options = {
-        "fPIC":[True, False],
-        "xerces_shared":[True, False]
-    }
-    default_options = {"fPIC": True, "xerces_shared":False}
+    options = {"fPIC":[True, False]}
+    default_options = {"fPIC": True}
     generators = "cmake", "cmake_find_package"
     url = "https://github.com/djimenezgallegos/xalanc_recipe"
     _cmake = None
@@ -36,7 +34,7 @@ class XalanCConan(ConanFile):
         self.copy("*.dll", dst=self._bin_folder, src="bin")
         self.copy("*.lib", dst=self._lib_folder, src="lib")
         self.copy("*.a", dst=self._lib_folder, src="lib")
-        self.copy("*.so", dst=self._lib_folder, src="lib")
+        self.copy("*.so", dst=self._bin_folder, src="lib")
 
     def requirements(self):
         self.requires("xerces-c/3.2.3@_/_")
@@ -53,8 +51,6 @@ class XalanCConan(ConanFile):
     def configure(self):
         if self.settings.os not in ("Windows", "Macos", "Linux"):
             raise ConanInvalidConfiguration("OS is not supported")
-        if self.options.xerces_shared == True:
-            self.options["xerces-c"].shared = True
 
     def _configure_cmake(self):
         if self._cmake:
@@ -69,7 +65,9 @@ class XalanCConan(ConanFile):
         self._cmake.definitions["CMAKE_ARCHIVE_OUTPUT_DIRECTORY"] = self._lib_folder
         self._cmake.definitions["CMAKE_LIBRARY_OUTPUT_DIRECTORY"] = self._lib_folder
         self._cmake.definitions["CMAKE_RUNTIME_OUTPUT_DIRECTORY"] = self._bin_folder
-        
+        if self.settings.os == "Linux":
+            self._cmake.definitions['CMAKE_POSITION_INDEPENDENT_CODE'] = self.options.fPIC
+
         if self.settings.os == "Windows":
             self._cmake.definitions["CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE"] = self._bin_folder
             self._cmake.definitions["CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG"] = self._bin_folder
@@ -90,6 +88,7 @@ class XalanCConan(ConanFile):
         
     def build(self):
         cmake = self._configure_cmake()
+        print(str(cmake.command_line))
         cmake.build()
 
     def package(self):
