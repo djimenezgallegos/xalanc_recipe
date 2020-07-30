@@ -8,16 +8,15 @@ class XalanCConan(ConanFile):
     version = "1.12.0"
     license = "Apache-2.0" 
     author = "None"
-    requires = "xerces-c/3.2.3@_/_"
     description = """Xalan-C++ version is a robust implementation of the W3C Recommendations for XSL Transformations (XSLT) and the XML Path Language (XPath). It works with the Xerces-C++ XML parser.
                     The Xalan-C++ project creates and distributes a standard XSLT library and a simple Xalan command-line utility for transforming XML documents.""" 
     topics = ("xml", "XSLT", "xalan", "xalan-c", "xalan-c++")
     settings = "os", "compiler", "build_type", "arch"
     options = {
-        "shared":[True],
-        "fPIC":[True, False]
+        "fPIC":[True, False],
+        "xerces_shared":[True, False]
     }
-    default_options={"shared": True, "fPIC": False, "xerces-c:shared": True}
+    default_options = {"fPIC": True, "xerces_shared":False}
     generators = "cmake", "cmake_find_package"
     url = "https://github.com/djimenezgallegos/xalanc_recipe"
     _cmake = None
@@ -36,18 +35,26 @@ class XalanCConan(ConanFile):
         self._cleanUp()
         self.copy("*.dll", dst=self._bin_folder, src="bin")
         self.copy("*.lib", dst=self._lib_folder, src="lib")
+        self.copy("*.a", dst=self._lib_folder, src="lib")
         self.copy("*.so", dst=self._lib_folder, src="lib")
+
+    def requirements(self):
+        self.requires("xerces-c/3.2.3@_/_")
 
     def build_requirements(self):
         self.build_requires("xerces-c/3.2.3@_/_", force_host_context=True)
 
     def config_options(self):
+        del self.options.static
         if self.settings.os == "Windows":
             del self.options.fPIC
+
 
     def configure(self):
         if self.settings.os not in ("Windows", "Macos", "Linux"):
             raise ConanInvalidConfiguration("OS is not supported")
+        if self.options.xerces_shared == True:
+            self.options["xerces-c"].shared = True
 
     def _configure_cmake(self):
         if self._cmake:
@@ -56,7 +63,7 @@ class XalanCConan(ConanFile):
         # https://apache.github.io/xalan-c/build.html
         self._cmake.definitions["transcoder"] = "default"
         self._cmake.definitions["message-loader"] = "inmemory"
-        self._cmake.definitions["BUILD_SHARED_LIBS"] = "ON"
+        self._cmake.definitions["BUILD_SHARED_LIBS:BOOL"] = "ON"
         self._cmake.definitions["CMAKE_DISABLE_FIND_PACKAGE_CURL"] = True
         self._cmake.definitions["CMAKE_DISABLE_FIND_PACKAGE_ICU"] = True
         self._cmake.definitions["CMAKE_ARCHIVE_OUTPUT_DIRECTORY"] = self._lib_folder
