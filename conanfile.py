@@ -21,17 +21,14 @@ class XalanCConan(ConanFile):
     generators = "cmake", "cmake_find_package"
     url = "https://github.com/djimenezgallegos/xalanc_recipe"
     _cmake = None
-    _temp_folder = None
-    _source_folder = None
-    _build_folder = None
-    _lib_folder = None
-    _bin_folder = None
+    #delete temp folder manually when not needed
+    _temp_folder = os.path.join(expanduser("~"), "conan_build", "xalan-c")
+    _source_folder = os.path.join(_temp_folder, "git")
+    _build_folder =  os.path.join(_temp_folder, "build")
+    _lib_folder = os.path.join(_build_folder, "lib")
+    _bin_folder = os.path.join(_build_folder, "bin")
 
-    def imports(self):
-        self._temp_folder = expanduser("~") + "/xalan-c"
-        self._build_folder = self._temp_folder + "/build"
-        self._lib_folder = self._build_folder + "/lib"
-        self._bin_folder = self._build_folder + "/bin"
+    def imports(self):      
         self.copy("*.dll", dst=self._bin_folder, src="bin")
         self.copy("*xerces-c*.lib", dst=self._bin_folder, src="lib")
         self.copy("*.so", dst=self._bin_folder, src="lib")
@@ -73,9 +70,9 @@ class XalanCConan(ConanFile):
         return self._cmake
 
     def source(self):
-        git = tools.Git(folder="xalan-c")
+        git = tools.Git(folder=self._source_folder)
         git.clone(url="https://github.com/apache/xalan-c.git", branch="Xalan-C_1_12_0", shallow=True)
-        self._source_folder = git.get_repo_root()
+        
         
     def build(self):
         cmake = self._configure_cmake()
@@ -90,8 +87,7 @@ class XalanCConan(ConanFile):
         tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
         tools.rmdir(os.path.join(self.package_folder, "lib", "cmake"))
         tools.rmdir(os.path.join(self.package_folder, "cmake"))
-        #remove tempfolder
-        tools.rmdir(self._temp_folder)
+        tools.rmdir(self._build_folder) #delete build folder after every build
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
