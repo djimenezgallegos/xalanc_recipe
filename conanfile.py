@@ -28,10 +28,15 @@ class XalanCConan(ConanFile):
     _lib_folder = os.path.join(_build_folder, "lib")
     _bin_folder = os.path.join(_build_folder, "bin")
 
-    def imports(self):      
+    def _cleanUp(self):
+        if os.path.exists(self._build_folder):
+            tools.rmdir(self._build_folder)
+
+    def imports(self):
+        self._cleanUp()
         self.copy("*.dll", dst=self._bin_folder, src="bin")
-        self.copy("*xerces-c*.lib", dst=self._bin_folder, src="lib")
-        self.copy("*.so", dst=self._bin_folder, src="lib")
+        self.copy("*.lib", dst=self._lib_folder, src="lib")
+        self.copy("*.so", dst=self._lib_folder, src="lib")
 
     def build_requirements(self):
         self.build_requires("xerces-c/3.2.3@_/_", force_host_context=True)
@@ -70,6 +75,8 @@ class XalanCConan(ConanFile):
         return self._cmake
 
     def source(self):
+        if os.path.exists(self._source_folder):
+            tools.rmdir(self._source_folder)
         git = tools.Git(folder=self._source_folder)
         git.clone(url="https://github.com/apache/xalan-c.git", branch="Xalan-C_1_12_0", shallow=True)
         
